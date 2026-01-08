@@ -1,49 +1,56 @@
 # Mogu Bun
 
-Bun wrapper for the Mogu food detection library.
+Bun wrapper for the Mogu food detection library. This tool allows you to detect food in images and classify them using the Mogu library via FFI. It supports automatic model downloading and direct image URLs.
 
 ## Requirements
 
 - [Bun](https://bun.sh)
-- [Rust](https://rustup.rs) (for building the FFI library)
+- [Rust](https://rustup.rs) (Required for building the FFI library during installation)
 
 ## Installation
 
 ```bash
-bun install
+bun add github:kuma-00/mogu-bun
 ```
 
-## Building
+## Library Usage
 
-To build the Rust FFI library for your current platform:
+You can use `MoguDetector` to detect food in images programmatically.
 
-```bash
-bun run build
+```typescript
+import { MoguDetector } from "mogu-bun";
+
+// 1. Initialize the detector
+// If no model path is provided, the default model will be downloaded automatically.
+const detector = await MoguDetector.create();
+
+// Alternatively, provide a path or URL to a custom ONNX model:
+// const detector = await MoguDetector.create("./custom_model.onnx");
+
+// 2. Perform detection
+const imageSource = "https://example.com/pizza.jpg"; // Can be a local path or URL
+
+try {
+  // Check if it is food
+  const { isFood, probability } = await detector.predictIsFood(imageSource);
+  console.log(`Is Food: ${isFood} (Probability: ${probability})`);
+
+  // Get top classification
+  const topClass = await detector.predictTopClass(imageSource);
+  console.log(`Label: ${topClass.label} (Probability: ${topClass.probability})`);
+
+} catch (error) {
+  console.error("Detection failed:", error);
+} finally {
+  // 3. Free memory
+  detector.free();
+}
 ```
 
-This will build the library and copy it to the `bin/` directory.
+## CLI Usage
 
-## Usage
+You can also run the detector directly from the command line if you clone the repository:
 
 ```bash
-bun index.ts <path_to_model.onnx> <path_to_image.jpg>
-```
-
-## Cross-Platform Build
-
-To build for other platforms, you can use `cargo build` with the `--target` flag in the `mogu-ffi` directory.
-
-### Linux
-```bash
-cd mogu-ffi && cargo build --release --target x86_64-unknown-linux-gnu
-```
-
-### macOS
-```bash
-cd mogu-ffi && cargo build --release --target x86_64-apple-darwin # or aarch64-apple-darwin
-```
-
-### Windows
-```bash
-cd mogu-ffi && cargo build --release --target x86_64-pc-windows-msvc
+bun index.ts <image_path_or_url> [model_path_or_url]
 ```

@@ -45,10 +45,10 @@ if (!existsSync(binDir)) {
 const libPath = join(binDir, libName);
 const modelPath = join(binDir, "model.onnx");
 
-async function downloadFile(url: string, destPath: string) {
+async function downloadFile(url: string, destPath: string): Promise<boolean> {
   if (existsSync(destPath)) {
     console.log(`✅ ${destPath.split("/").pop()} already exists.`);
-    return;
+    return true;
   }
 
   console.log(`⬇️  Downloading ${url}...`);
@@ -56,28 +56,52 @@ async function downloadFile(url: string, destPath: string) {
     const response = await fetch(url);
     if (!response.ok) {
       if (response.status === 404) {
-        console.warn(`⚠️  Release asset not found: ${url}. (This is expected during development before the first release)`);
-        console.warn(`   Please run 'bun run build' to build the library locally.`);
-        return;
+        console.warn(`⚠️  Release asset not found: ${url}.`);
+        return false;
       }
       throw new Error(`Failed to download: ${response.status} ${response.statusText}`);
     }
     const arrayBuffer = await response.arrayBuffer();
     await Bun.write(destPath, arrayBuffer);
     console.log(`✅ Downloaded to ${destPath}`);
+    return true;
   } catch (error) {
     console.error(`❌ Error downloading ${url}:`, error);
-    // Don't fail the install process completely, allow fallback to local build
+    return false;
   }
 }
 
 async function main() {
   console.log("🚀 Running postinstall setup...");
 
-  // 1. Download Binary
-  await downloadFile(downloadUrl, libPath);
+  // 1. Try to Download Binary
+  const binaryDownloaded = await downloadFile(downloadUrl, libPath);
+
+  if (!binaryDownloaded) {
+    console.log("🛠️  Binary not found in releases. Attempting to build from source...");
+    try {
+      // Run 'bun run build'
+      // We use Bun.spawnSync to inherit stdio
+      const proc = Bun.spawnSync(["bun", "run", "build"], {
+        cwd: import.meta.dir,
+        stdout: "inherit",
+        stderr: "inherit",
+      });
+
+      if (proc.exitCode !== 0) {
+        console.error("❌ Build failed. Please ensure Rust/Cargo is installed.");
+        process.exit(1);
+      }
+      console.log("✅ Build successful.");
+    } catch (err) {
+      console.error("❌ Failed to run build script:", err);
+      process.exit(1);
+    }
+  }
 
   // 2. Download Model
+  // We don't strictly require the model to be downloaded during install
+  // as the library can download it at runtime.
   await downloadFile(DEFAULT_MODEL_URL, modelPath);
 
   console.log("✨ Postinstall setup complete.");
