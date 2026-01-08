@@ -55,8 +55,14 @@ pub extern "C" fn mogu_predict_is_food(
         Err(_) => return -1,
     };
 
-    let img = match image::open(path_str) {
-        Ok(i) => i,
+    let img = match image::ImageReader::open(path_str) {
+        Ok(r) => match r.with_guessed_format() {
+            Ok(r) => match r.decode() {
+                Ok(i) => i,
+                Err(_) => return -1,
+            },
+            Err(_) => return -1,
+        },
         Err(_) => return -1,
     };
 
@@ -94,8 +100,14 @@ pub extern "C" fn mogu_predict_top_class(
         Err(_) => return -1,
     };
 
-    let img = match image::open(path_str) {
-        Ok(i) => i,
+    let img = match image::ImageReader::open(path_str) {
+        Ok(r) => match r.with_guessed_format() {
+            Ok(r) => match r.decode() {
+                Ok(i) => i,
+                Err(_) => return -1,
+            },
+            Err(_) => return -1,
+        },
         Err(_) => return -1,
     };
 

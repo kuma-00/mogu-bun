@@ -210,26 +210,37 @@ export class MoguDetector {
 
 // Example usage
 if (import.meta.main) {
-  const arg1 = process.argv[2];
-  const arg2 = process.argv[3];
-
-  let imageSource: string;
+  const args = process.argv.slice(2);
+  let command = "top";
+  let imageSource = "";
   let modelSource: string | undefined;
 
-  if (arg1 && arg2) {
-    modelSource = arg1;
-    imageSource = arg2;
-  } else if (arg1) {
-    imageSource = arg1;
-  } else {
-    console.log("Usage: bun index.ts <image_path_or_url> [model_path_or_url]");
+  if (args[0] === "food" || args[0] === "top") {
+    command = args.shift()!;
+  }
+
+  imageSource = args[0] || "";
+  modelSource = args[1];
+
+  if (!imageSource) {
+    console.log("Usage: bun index.ts [food|top] <image_path_or_url> [model_path_or_url]");
+    console.log("\nCommands:");
+    console.log("  top   - Predict the top class (default)");
+    console.log("  food  - Check if the image contains food");
     process.exit(1);
   }
 
   try {
     const detector = await MoguDetector.create(modelSource);
-    const result = await detector.predictTopClass(imageSource);
-    console.log(`Result: ${result.label} (${(result.probability * 100).toFixed(2)}%)`);
+    
+    if (command === "food") {
+      const result = await detector.predictIsFood(imageSource);
+      console.log(`Is Food: ${result.isFood} (${(result.probability * 100).toFixed(2)}%)`);
+    } else {
+      const result = await detector.predictTopClass(imageSource);
+      console.log(`Result: ${result.label} (${(result.probability * 100).toFixed(2)}%)`);
+    }
+    
     detector.free();
   } catch (e) {
     console.error(e);
