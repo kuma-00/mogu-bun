@@ -15,9 +15,5 @@
     "postinstall": "bun install.ts",
     "release": "bun release.ts"
   },
-  "trustedDependencies": [
-    "protobufjs",
-    "tree-sitter-bash"
-  ],
   "type": "module"
 }
