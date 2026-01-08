@@ -17,15 +17,12 @@ if (platform === "linux") {
 }
 
 const libPath = join(import.meta.dir, "bin", libName);
-const fallbackPath = join(import.meta.dir, "mogu-ffi", "target", "release", libName);
 
-const finalPath = [libPath, fallbackPath].find((p) => existsSync(p));
-
-if (!finalPath) {
-  throw new Error(`Could not find ${libName}. Please run 'bun run build' first.`);
+if (!existsSync(libPath)) {
+  throw new Error(`Could not find ${libName} at ${libPath}. Please run 'bun run build' first.`);
 }
 
-const lib = dlopen(finalPath, {
+const lib = dlopen(libPath, {
   mogu_detector_new: {
     args: [FFIType.cstring],
     returns: FFIType.ptr,
