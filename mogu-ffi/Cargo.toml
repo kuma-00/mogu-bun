@@ -1,0 +1,13 @@
+[package]
+name = "mogu-ffi"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+mogu = { git = "https://github.com/kuma-00/Mogu.git" }
+image = "0.25.9"
+ndarray = "0.17.1"
+ort = "2.0.0-rc.11"

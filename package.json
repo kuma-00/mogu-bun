@@ -1,0 +1,23 @@
+{
+  "name": "mogu-bun",
+  "version": "0.1.0",
+  "module": "index.ts",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "scripts": {
+    "build": "bun build.ts",
+    "start": "bun index.ts",
+    "test": "bun test",
+    "postinstall": "bun install.ts",
+    "release": "bun release.ts"
+  },
+  "trustedDependencies": [
+    "protobufjs",
+    "tree-sitter-bash"
+  ],
+  "type": "module"
+}
