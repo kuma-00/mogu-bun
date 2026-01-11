@@ -25,7 +25,7 @@ if (!existsSync(libPath)) {
   throw new Error(`Could not find ${libName} at ${libPath}. Please run 'bun run build' first.`);
 }
 
-const lib = dlopen(libPath, {
+const symbols = {
   mogu_detector_new: {
     args: [FFIType.cstring],
     returns: FFIType.ptr,
@@ -50,7 +50,15 @@ const lib = dlopen(libPath, {
     args: [FFIType.ptr],
     returns: FFIType.void,
   },
-});
+} as const;
+
+let lib: ReturnType<typeof dlopen<typeof symbols>>;
+
+try {
+  lib = dlopen(libPath, symbols);
+} catch (e) {
+  throw new Error(`Failed to open library at ${libPath}: ${e}. This is often caused by missing dependencies (like libonnxruntime) or an architecture mismatch.`);
+}
 
 function isUrl(path: string): boolean {
   try {
