@@ -1,6 +1,6 @@
 {
   "name": "mogu-bun",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "module": "index.ts",
   "devDependencies": {
     "@types/bun": "latest"
