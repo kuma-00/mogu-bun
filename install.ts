@@ -1,6 +1,7 @@
 import { join } from "path";
-import { existsSync, mkdirSync, chmodSync } from "fs";
+import { existsSync, mkdirSync, chmodSync, unlinkSync } from "fs";
 import { $ } from "bun";
+import { dlopen, FFIType } from "bun:ffi";
 
 // Configuration
 const REPO = "kuma-00/mogu-bun"; // Replace with actual repository if different
@@ -71,14 +72,46 @@ async function downloadFile(url: string, destPath: string): Promise<boolean> {
   }
 }
 
+function checkLibrary(path: string): boolean {
+  try {
+    const lib = dlopen(path, {
+      mogu_detector_new: {
+        args: [FFIType.cstring],
+        returns: FFIType.ptr,
+      }
+    });
+    // If we get here, it loaded successfully
+    // We can't easily free it without keeping the reference, but the process will end soon.
+    // Ideally we should close it if bun:ffi supported explicit close/unload, but dlopen keeps it open.
+    // For an install script, it's fine.
+    return true;
+  } catch (e) {
+    console.error(`⚠️  Library verification failed: ${e}`);
+    return false;
+  }
+}
+
 async function main() {
   console.log("🚀 Running postinstall setup...");
 
   // 1. Try to Download Binary
-  const binaryDownloaded = await downloadFile(downloadUrl, libPath);
+  let binaryDownloaded = await downloadFile(downloadUrl, libPath);
+
+  if (binaryDownloaded) {
+    // Verify the binary works on this system (e.g. check for glibc vs musl mismatch)
+    console.log("🔍 Verifying binary compatibility...");
+    if (!checkLibrary(libPath)) {
+      console.warn("⚠️  Downloaded binary is incompatible with this system (e.g. glibc/musl mismatch).");
+      console.warn("🗑️  Removing incompatible binary and attempting to build from source...");
+      unlinkSync(libPath);
+      binaryDownloaded = false;
+    } else {
+      console.log("✅ Binary verified.");
+    }
+  }
 
   if (!binaryDownloaded) {
-    console.log("🛠️  Binary not found in releases. Attempting to build from source...");
+    console.log("🛠️  Binary not found or incompatible. Attempting to build from source...");
     try {
       // Run 'bun run build'
       // We use Bun.spawnSync to inherit stdio
