@@ -102,7 +102,6 @@ async function main() {
     console.log("🔍 Verifying binary compatibility...");
     if (!checkLibrary(libPath)) {
       console.warn("⚠️  Downloaded binary is incompatible with this system (e.g. glibc/musl mismatch).");
-      console.warn("🗑️  Removing incompatible binary and attempting to build from source...");
       unlinkSync(libPath);
       binaryDownloaded = false;
     } else {
@@ -111,9 +110,25 @@ async function main() {
   }
 
   if (!binaryDownloaded) {
-    console.error(`❌ Pre-built binary not found or incompatible with this system at: ${libPath}`);
-    console.error("🛠️  Please ensure you have Rust and Cargo installed, then run 'bun run build' manually to build from source.");
-    process.exit(1);
+    console.warn(`⚠️  Pre-built binary not found or incompatible. Attempting to build from source...`);
+    try {
+      // Run 'bun run build'
+      // We use Bun.spawnSync to inherit stdio
+      const proc = Bun.spawnSync(["bun", "run", "build"], {
+        cwd: import.meta.dir,
+        stdout: "inherit",
+        stderr: "inherit",
+      });
+
+      if (proc.exitCode !== 0) {
+        console.error("❌ Build failed. Please ensure Rust/Cargo is installed.");
+        process.exit(1);
+      }
+      console.log("✅ Build successful.");
+    } catch (err) {
+      console.error("❌ Failed to run build script:", err);
+      process.exit(1);
+    }
   }
 
   // 2. Download Model
