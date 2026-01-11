@@ -1,5 +1,6 @@
 import { dlopen, FFIType, ptr, CString, type Pointer } from "bun:ffi";
-import { join } from "path";
+import { fileURLToPath } from "url";
+import { join, dirname } from "path";
 import { existsSync, unlinkSync, mkdirSync } from "fs";
 import { tmpdir } from "os";
 
@@ -16,7 +17,9 @@ if (platform === "linux") {
   libName = "mogu_ffi.dll";
 }
 
-const libPath = join(import.meta.dir, "bin", libName);
+// Resolve the library path using import.meta.resolve to handle various environments better
+const libUrl = import.meta.resolve(`./bin/${libName}`);
+const libPath = fileURLToPath(libUrl);
 
 if (!existsSync(libPath)) {
   throw new Error(`Could not find ${libName} at ${libPath}. Please run 'bun run build' first.`);
@@ -70,7 +73,7 @@ export class MoguDetector {
 
   static async create(modelSource?: string): Promise<MoguDetector> {
     let modelPath = modelSource;
-    const binDir = join(import.meta.dir, "bin");
+    const binDir = dirname(libPath);
     const defaultModelPath = join(binDir, "model.onnx");
 
     // If no model provided, try to use the default local model first
