@@ -21,12 +21,18 @@ pub extern "C" fn mogu_detector_new(model_path: *const c_char) -> *mut MoguDetec
     let c_str = unsafe { CStr::from_ptr(model_path) };
     let path_str = match c_str.to_str() {
         Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
+        Err(e) => {
+            eprintln!("Error converting model path to string: {}", e);
+            return ptr::null_mut();
+        }
     };
 
     let detector = match FoodDetector::new(path_str) {
         Ok(d) => d,
-        Err(_) => return ptr::null_mut(),
+        Err(e) => {
+            eprintln!("Error creating FoodDetector with model '{}': {}", path_str, e);
+            return ptr::null_mut();
+        }
     };
 
     let processor = ImageProcessor::with_imagenet_normalization(224, 224);
@@ -44,6 +50,7 @@ pub extern "C" fn mogu_predict_is_food(
     out_probability: *mut f32,
 ) -> i32 {
     if detector.is_null() || image_path.is_null() {
+        eprintln!("Error: detector or image_path is null");
         return -1;
     }
 
@@ -52,18 +59,30 @@ pub extern "C" fn mogu_predict_is_food(
     let c_str = unsafe { CStr::from_ptr(image_path) };
     let path_str = match c_str.to_str() {
         Ok(s) => s,
-        Err(_) => return -1,
+        Err(e) => {
+            eprintln!("Error converting image path to string: {}", e);
+            return -1;
+        }
     };
 
     let img = match image::ImageReader::open(path_str) {
         Ok(r) => match r.with_guessed_format() {
             Ok(r) => match r.decode() {
                 Ok(i) => i,
-                Err(_) => return -1,
+                Err(e) => {
+                    eprintln!("Error decoding image '{}': {}", path_str, e);
+                    return -1;
+                }
             },
-            Err(_) => return -1,
+            Err(e) => {
+                eprintln!("Error determining image format for '{}': {}", path_str, e);
+                return -1;
+            }
         },
-        Err(_) => return -1,
+        Err(e) => {
+            eprintln!("Error opening image file '{}': {}", path_str, e);
+            return -1;
+        },
     };
 
     let input = detector.processor.preprocess(&img);
@@ -75,7 +94,10 @@ pub extern "C" fn mogu_predict_is_food(
             }
             if is_food { 1 } else { 0 }
         }
-        Err(_) => -1,
+        Err(e) => {
+            eprintln!("Error during food prediction: {}", e);
+            -1
+        }
     }
 }
 
@@ -89,6 +111,7 @@ pub extern "C" fn mogu_predict_top_class(
     out_probability: *mut f32,
 ) -> i32 {
     if detector.is_null() || image_path.is_null() {
+        eprintln!("Error: detector or image_path is null");
         return -1;
     }
 
@@ -97,18 +120,30 @@ pub extern "C" fn mogu_predict_top_class(
     let c_str = unsafe { CStr::from_ptr(image_path) };
     let path_str = match c_str.to_str() {
         Ok(s) => s,
-        Err(_) => return -1,
+        Err(e) => {
+            eprintln!("Error converting image path to string: {}", e);
+            return -1;
+        }
     };
 
     let img = match image::ImageReader::open(path_str) {
         Ok(r) => match r.with_guessed_format() {
             Ok(r) => match r.decode() {
                 Ok(i) => i,
-                Err(_) => return -1,
+                Err(e) => {
+                    eprintln!("Error decoding image '{}': {}", path_str, e);
+                    return -1;
+                }
             },
-            Err(_) => return -1,
+            Err(e) => {
+                eprintln!("Error determining image format for '{}': {}", path_str, e);
+                return -1;
+            }
         },
-        Err(_) => return -1,
+        Err(e) => {
+            eprintln!("Error opening image file '{}': {}", path_str, e);
+            return -1;
+        },
     };
 
     let input = detector.processor.preprocess(&img);
@@ -121,10 +156,14 @@ pub extern "C" fn mogu_predict_top_class(
                 }
                 *class_idx as i32
             } else {
+                eprintln!("Error: No predictions returned");
                 -1
             }
         }
-        Err(_) => -1,
+        Err(e) => {
+            eprintln!("Error during class prediction: {}", e);
+            -1
+        }
     }
 }
 
