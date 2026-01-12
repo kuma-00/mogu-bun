@@ -10,4 +10,4 @@ crate-type = ["cdylib"]
 mogu = { git = "https://github.com/kuma-00/Mogu.git" }
 image = "0.25.9"
 ndarray = "0.17.1"
-ort = { version = "2.0.0-rc.11", features = ["compile-static"] }
+ort = "2.0.0-rc.11"
