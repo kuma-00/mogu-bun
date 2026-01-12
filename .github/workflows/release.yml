@@ -46,6 +46,26 @@ jobs:
           cd mogu-ffi
           cargo build --release --target ${{ matrix.target }}
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Prepare for test (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p bin
+          cp mogu-ffi/target/${{ matrix.target }}/release/${{ matrix.artifact_name }} bin/${{ matrix.artifact_name }}
+
+      - name: Prepare for test (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          if (!(Test-Path bin)) { New-Item -ItemType Directory -Path bin }
+          copy mogu-ffi\target\${{ matrix.target }}\release\${{ matrix.artifact_name }} bin\${{ matrix.artifact_name }}
+
+      - name: Run Tests
+        run: bun test
+
       - name: Rename Artifact (Unix)
         if: runner.os != 'Windows'
         run: |

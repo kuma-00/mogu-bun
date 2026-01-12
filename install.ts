@@ -1,6 +1,5 @@
 import { join } from "path";
-import { existsSync, mkdirSync, chmodSync, unlinkSync } from "fs";
-import { $ } from "bun";
+import { existsSync, mkdirSync, unlinkSync } from "fs";
 import { dlopen, FFIType } from "bun:ffi";
 
 // Configuration
